@@ -1,23 +1,20 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
+import { isDemoPreviewSession } from "@/lib/demo-preview";
 import { AkunTab } from "./AkunTab";
 import { PengaturanTab } from "./PengaturanTab";
-import { ProfilTokoTab } from "./ProfilTokoTab";
 import { ProfileHeader } from "./ProfileHeader";
-import { ProfileHero } from "./ProfileHero";
 import { ProfileTabs } from "./ProfileTabs";
-import type { Pengaturan, TokoData, UserData } from "./types";
+import type { Pengaturan, UserData } from "./types";
 
-/** Logic profil (muat akun, state form, tombol simpan) dari kode teman; tampilannya memakai komponen di atas. */
 export function ProfileView() {
   const router = useRouter();
-  const [tab, setTab] = useState("profil");
+  const [tab, setTab] = useState("akun");
   const [savedFlash, setSavedFlash] = useState(false);
   const [loadingUser, setLoadingUser] = useState(true);
-
   const [user, setUser] = useState<UserData>({
     nama: "",
     email: "",
@@ -25,16 +22,6 @@ export function ProfileView() {
     jabatan: "Pemilik Toko",
     toko: "Buku Dapur",
   });
-
-  const [toko, setToko] = useState<TokoData>({
-    nama: "Buku Dapur — Frozen & Siap Saji",
-    alamat: "",
-    telepon: "",
-    instagram: "",
-    whatsapp: "",
-    deskripsi: "",
-  });
-
   const [pengaturan, setPengaturan] = useState<Pengaturan>({
     notifWa: true,
     notifEmail: false,
@@ -46,25 +33,21 @@ export function ProfileView() {
   });
 
   useEffect(() => {
-    const token = localStorage.getItem("auth_token");
-    if (!token) {
+    if (!isDemoPreviewSession() && !localStorage.getItem("auth_token")) {
       router.push("/login");
       return;
     }
-
     async function fetchUser() {
       try {
         const res = await api.auth.getMe();
         if (res.success && res.data) {
           setUser((prev) => ({
             ...prev,
+            id: res.data.id,
             nama: res.data.nama || prev.nama,
             email: res.data.email || prev.email,
-          }));
-          setToko((prev) => ({
-            ...prev,
-            nama: res.data.nama ? `${res.data.nama} — Buku Dapur` : prev.nama,
-            telepon: prev.telepon || "",
+            peran: res.data.peran,
+            jabatan: res.data.peran === "SUPER_ADMIN" ? "Super Admin" : "Admin",
           }));
         }
       } catch (error) {
@@ -77,25 +60,25 @@ export function ProfileView() {
     fetchUser();
   }, [router]);
 
-  // `loadingUser` dipertahankan seperti kode asli (belum dipakai di tampilan).
   void loadingUser;
 
-  const handleSimpan = () => {
-    setSavedFlash(true);
-    setTimeout(() => setSavedFlash(false), 2200);
+  const handleSimpan = async () => {
+    try {
+      const result = await api.auth.updateMe({ nama: user.nama, email: user.email });
+      setUser((prev) => ({ ...prev, id: result.data.id, peran: result.data.peran, nama: result.data.nama, email: result.data.email }));
+      setSavedFlash(true);
+      setTimeout(() => setSavedFlash(false), 2200);
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : "Profil belum dapat disimpan.");
+    }
   };
 
   return (
-    <>
-      <div className="flex flex-col gap-6">
-        <ProfileHeader savedFlash={savedFlash} />
-        <ProfileHero toko={toko} user={user} onSave={handleSimpan} />
-        <ProfileTabs value={tab} onChange={setTab} />
-
-        {tab === "profil" && <ProfilTokoTab toko={toko} onToko={setToko} onSave={handleSimpan} />}
-        {tab === "akun" && <AkunTab user={user} onUser={setUser} onSave={handleSimpan} />}
-        {tab === "pengaturan" && <PengaturanTab pengaturan={pengaturan} onPengaturan={setPengaturan} onSave={handleSimpan} />}
-      </div>
-    </>
+    <div className="flex flex-col gap-6">
+      <ProfileHeader savedFlash={savedFlash} />
+      <ProfileTabs value={tab} onChange={setTab} />
+      {tab === "akun" && <AkunTab user={user} onUser={setUser} onSave={handleSimpan} />}
+      {tab === "pengaturan" && <PengaturanTab pengaturan={pengaturan} onPengaturan={setPengaturan} onSave={handleSimpan} />}
+    </div>
   );
 }

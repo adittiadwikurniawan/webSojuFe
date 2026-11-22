@@ -12,6 +12,7 @@ import { CashflowChart } from "./CashflowChart";
 import { SourceRatioCard } from "./SourceRatioCard";
 import { WelcomeHeader } from "./WelcomeHeader";
 import type { CashflowPoint, InputSourceStats, PemasukanPengeluaran, PeriodeKey } from "./types";
+import { isDemoPreviewSession } from "@/lib/demo-preview";
 
 /** Logic (auth, fetch API, state) dari kode teman; tampilannya memakai komponen di atas. */
 export function DashboardView() {
@@ -27,7 +28,7 @@ export function DashboardView() {
   const [incidentId, setIncidentId] = useState("INC-00000000-0000");
 
   useEffect(() => {
-    if (!localStorage.getItem("auth_token")) {
+    if (!isDemoPreviewSession() && !localStorage.getItem("auth_token")) {
       router.push("/login");
       return;
     }

@@ -1,18 +1,11 @@
 export interface UserData {
+  id?: number;
   nama: string;
   email: string;
   telepon: string;
   jabatan: string;
   toko: string;
-}
-
-export interface TokoData {
-  nama: string;
-  alamat: string;
-  telepon: string;
-  instagram: string;
-  whatsapp: string;
-  deskripsi: string;
+  peran?: "ADMIN" | "SUPER_ADMIN";
 }
 
 export interface Pengaturan {
@@ -25,4 +18,13 @@ export interface Pengaturan {
   bahasa: string;
 }
 
-export type ProfileTab = "profil" | "akun" | "pengaturan";
+export interface TokoData {
+  nama: string;
+  alamat: string;
+  telepon: string;
+  instagram: string;
+  whatsapp: string;
+  deskripsi: string;
+}
+
+export type ProfileTab = "akun" | "pengaturan";

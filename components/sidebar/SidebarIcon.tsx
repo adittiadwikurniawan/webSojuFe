@@ -25,10 +25,24 @@ const PATHS = {
     </>
   ),
   history: <path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1L3.5 8.5M3.5 3.5v5h5M12 7.5V12l3 2" />,
+  orders: (
+    <>
+      <path d="M6 3.5h12v17l-3-1.8-3 1.8-3-1.8-3 1.8z" />
+      <path d="M9 8h6M9 12h6M9 16h3" />
+    </>
+  ),
   cms: (
     <>
       <rect x="3" y="4.5" width="18" height="15" rx="3" />
       <path d="M3 9.5h18M7 14.5h6" />
+    </>
+  ),
+  settings: (
+    <>
+      <path d="M6 4v5m0 4v7M12 4v2m0 4v10M18 4v8m0 4v4" />
+      <circle cx="6" cy="11" r="2" />
+      <circle cx="12" cy="8" r="2" />
+      <circle cx="18" cy="14" r="2" />
     </>
   ),
 } as const;

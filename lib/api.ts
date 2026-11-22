@@ -1,3 +1,4 @@
+import { getDemoExportRows, getDemoFreeTable, handleDemoPreviewRequest, isDemoPreviewSession } from './demo-preview';
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000/api/v1';
 
 // Token management
@@ -25,6 +26,9 @@ async function apiRequest<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
+  if (isDemoPreviewSession()) {
+    return handleDemoPreviewRequest<T>(endpoint, options);
+  }
   const token = getToken();
   const url = `${API_BASE_URL}${endpoint}`;
 
@@ -75,6 +79,9 @@ export const authApi = {
   getMe: async () => {
     return apiRequest<{ success: boolean; data: any }>('/auth/me');
   },
+
+  updateMe: async (data: { nama: string; email: string }) => apiRequest<{ success: boolean; data: any }>('/auth/me', { method: 'PATCH', body: JSON.stringify(data) }),
+  changePassword: async (passwordLama: string, passwordBaru: string) => apiRequest<{ success: boolean; message?: string }>('/auth/change-password', { method: 'POST', body: JSON.stringify({ passwordLama, passwordBaru }) }),
 
   logout: () => {
     clearToken();
@@ -155,6 +162,9 @@ export const productsApi = {
 // Public Products API (untuk customer page - tanpa auth)
 export const publicProductsApi = {
   getAll: async (search?: string) => {
+    if (isDemoPreviewSession()) {
+      return handleDemoPreviewRequest<{ success: boolean; data: any }>(`/products?search=${encodeURIComponent(search || '')}`);
+    }
     const baseUrl = API_BASE_URL.replace('/api/v1', '/api/public');
     const url = search ? `${baseUrl}/products?search=${encodeURIComponent(search)}` : `${baseUrl}/products`;
     const response = await fetch(url);
@@ -163,6 +173,9 @@ export const publicProductsApi = {
   },
 
   getById: async (id: number) => {
+    if (isDemoPreviewSession()) {
+      return handleDemoPreviewRequest<{ success: boolean; data: any }>(`/products/${id}`);
+    }
     const url = `${API_BASE_URL.replace('/api/v1', '/api/public')}/products/${id}`;
     const response = await fetch(url);
     if (!response.ok) throw new Error('Failed to fetch product');
@@ -386,6 +399,19 @@ export const reportsApi = {
   },
 
   exportTransactions: async (filters?: { jenis_transaksi_id?: number; tanggal_mulai?: string; tanggal_selesai?: string }) => {
+    if (isDemoPreviewSession()) {
+      const rows = getDemoExportRows();
+      const csv = ["Kode,Tanggal,Detail,Nominal", ...rows.map((row) => `"${row.kode}","${row.tanggal}","${row.detail}",${row.nominal}`)].join("\n");
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `transaksi_${Date.now()}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(link.href);
+      return;
+    }
     const params = new URLSearchParams();
     if (filters?.jenis_transaksi_id) params.append('jenis_transaksi_id', filters.jenis_transaksi_id.toString());
     if (filters?.tanggal_mulai) params.append('tanggal_mulai', filters.tanggal_mulai);
@@ -404,6 +430,20 @@ export const reportsApi = {
   },
 
   exportFreeTable: async (tableId: number) => {
+    if (isDemoPreviewSession()) {
+      const table = getDemoFreeTable(tableId);
+      const columnNames = table?.kolom.map((column) => column.namaKolom) || ["Data"];
+      const csv = [columnNames.join(","), ...(table?.baris.map((row) => columnNames.map((_, index) => row.data[String(index + 1)] || "").join(",")) || [])].join("\n");
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `tabel_${Date.now()}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(link.href);
+      return;
+    }
     const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
     const url = `${API_BASE_URL}/reports/export/free-table/${tableId}`;
     const response = await fetch(url, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
@@ -421,7 +461,7 @@ export const reportsApi = {
 // Audit Log API - default backend 7 hari terakhir, kirim days untuk ubah
 // rentang (data lama TIDAK pernah dihapus, ini murni filter tampilan)
 export const auditLogApi = {
-  getAll: async (filters?: { sheet?: string; source?: string; search?: string; page?: number; limit?: number; days?: number | 'all' }) => {
+  getAll: async (filters?: { sheet?: string; source?: string; search?: string; page?: number; limit?: number; days?: number | 'all'; dateFrom?: string; dateTo?: string }) => {
     const params = new URLSearchParams();
     if (filters?.sheet && filters.sheet !== 'semua') params.append('sheet', filters.sheet);
     if (filters?.source && filters.source !== 'semua') params.append('source', filters.source);
@@ -429,8 +469,20 @@ export const auditLogApi = {
     if (filters?.page) params.append('page', filters.page.toString());
     if (filters?.limit) params.append('limit', filters.limit.toString());
     if (filters?.days !== undefined) params.append('days', filters.days.toString());
+    if (filters?.dateFrom) params.append('dateFrom', filters.dateFrom);
+    if (filters?.dateTo) params.append('dateTo', filters.dateTo);
     return apiRequest<{ success: boolean; data: any }>(`/audit-log?${params}`);
   },
+};
+
+export const usersApi = {
+  getAll: () => apiRequest<{ success: boolean; data: any[] }>('/users'),
+  create: (data: { nama: string; email: string; password: string; peran: 'ADMIN' | 'SUPER_ADMIN' }) => apiRequest<{ success: boolean; data: any }>('/users', { method: 'POST', body: JSON.stringify(data) }),
+};
+
+export const customerOrdersApi = {
+  getAll: () => apiRequest<{ success: boolean; data: any[] }>('/customer-orders'),
+  updateStatus: (id: number, status: string) => apiRequest<{ success: boolean; data: any }>(`/customer-orders/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }),
 };
 
 // CMS API (Admin - full CRUD)
@@ -464,40 +516,14 @@ export const cmsApi = {
       method: 'DELETE',
     });
   },
-
-  // Menu CRUD
-  getMenu: async () => {
-    return apiRequest<{ success: boolean; data: any }>('/cms/menu');
-  },
-
-  getMenuById: async (id: number) => {
-    return apiRequest<{ success: boolean; data: any }>(`/cms/menu/${id}`);
-  },
-
-  createMenu: async (data: { label: string; path: string; urutan?: number; aktif?: boolean }) => {
-    return apiRequest<{ success: boolean; data: any }>('/cms/menu', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  },
-
-  updateMenu: async (id: number, data: { label?: string; path?: string; urutan?: number; aktif?: boolean }) => {
-    return apiRequest<{ success: boolean; data: any }>(`/cms/menu/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
-  },
-
-  deleteMenu: async (id: number) => {
-    return apiRequest<{ success: boolean; data: any }>(`/cms/menu/${id}`, {
-      method: 'DELETE',
-    });
-  },
 };
 
 // Public CMS API (untuk customer page - tanpa auth)
 export const publicCmsApi = {
   getContent: async (key?: string) => {
+    if (isDemoPreviewSession()) {
+      return handleDemoPreviewRequest<{ success: boolean; data: any }>(`/cms/content${key ? `?key=${encodeURIComponent(key)}` : ''}`);
+    }
     const params = key ? `?key=${key}` : '';
     const url = `${API_BASE_URL.replace('/api/v1', '/api/public')}/cms/content${params}`;
     const response = await fetch(url);
@@ -506,16 +532,12 @@ export const publicCmsApi = {
   },
 
   getContentByKey: async (key: string) => {
+    if (isDemoPreviewSession()) {
+      return handleDemoPreviewRequest<{ success: boolean; data: any }>(`/cms/content/${encodeURIComponent(key)}`);
+    }
     const url = `${API_BASE_URL.replace('/api/v1', '/api/public')}/cms/content/${key}`;
     const response = await fetch(url);
     if (!response.ok) throw new Error('Failed to fetch public content');
-    return response.json();
-  },
-
-  getMenu: async () => {
-    const url = `${API_BASE_URL.replace('/api/v1', '/api/public')}/cms/menu`;
-    const response = await fetch(url);
-    if (!response.ok) throw new Error('Failed to fetch public menu');
     return response.json();
   },
 };
@@ -542,6 +564,8 @@ export const api = {
   transactionTypes: transactionTypesApi,
   reports: reportsApi,
   auditLog: auditLogApi,
+  users: usersApi,
+  customerOrders: customerOrdersApi,
   freeTables: freeTablesApi,
   cms: cmsApi,
   publicCms: publicCmsApi,
