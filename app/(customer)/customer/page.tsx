@@ -3,10 +3,10 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
-import { OrderModal } from "@/components/customer/OrderModal";
-import { ProductCard } from "@/components/customer/ProductCard";
-import { ProductVisual } from "@/components/customer/ProductVisual";
-import { WhatsAppIcon } from "@/components/customer/icons";
+import { OrderModal } from "./_components/OrderModal";
+import { ProductCard } from "./_components/ProductCard";
+import { ProductVisual } from "./_components/ProductVisual";
+import { WhatsAppIcon } from "./_components/icons";
 import { openWhatsApp, parseVarian, useContactInfo } from "@/lib/whatsapp";
 
 const ChevronLeft = (

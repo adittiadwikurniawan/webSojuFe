@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
-import { PageHeader } from "@/components/customer/PageHeader";
+import { PageHeader } from "../_components/PageHeader";
 
 const svgProps = {
   width: 24,

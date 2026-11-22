@@ -1,5 +1,5 @@
-import { ProductVisual } from "@/components/customer/ProductVisual";
-import { WhatsAppIcon } from "@/components/customer/icons";
+import { ProductVisual } from "./ProductVisual";
+import { WhatsAppIcon } from "./icons";
 import { parseVarian } from "@/lib/whatsapp";
 
 interface ProductCardProps {

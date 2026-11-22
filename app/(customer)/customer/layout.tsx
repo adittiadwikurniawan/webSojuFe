@@ -7,7 +7,7 @@ import { usePathname } from "next/navigation";
 import { useRouter } from "next/navigation";
 import { useContactInfo } from "@/lib/whatsapp";
 import { CartProvider, useCart } from "@/components/customer/CartContext";
-import { CartDrawer } from "@/components/customer/CartDrawer";
+import { CartDrawer } from "./_components/CartDrawer";
 import { customerApi } from "@/lib/customerApi";
 
 const MenuIcon = (

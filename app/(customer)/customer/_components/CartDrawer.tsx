@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useCart } from "./CartContext";
+import { useCart } from "@/components/customer/CartContext";
 import { ProductVisual } from "./ProductVisual";
 import { CloseIcon, MinusIcon, PlusIcon } from "./icons";
 

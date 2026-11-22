@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { api } from "@/lib/api";
-import { OrderModal } from "@/components/customer/OrderModal";
-import { PageHeader } from "@/components/customer/PageHeader";
-import { ProductCard } from "@/components/customer/ProductCard";
+import { OrderModal } from "../_components/OrderModal";
+import { PageHeader } from "../_components/PageHeader";
+import { ProductCard } from "../_components/ProductCard";
 import { parseVarian } from "@/lib/whatsapp";
 
 const SearchIcon = (

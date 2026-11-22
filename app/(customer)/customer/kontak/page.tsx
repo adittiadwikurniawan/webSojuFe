@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { PageHeader } from "@/components/customer/PageHeader";
-import { WhatsAppIcon } from "@/components/customer/icons";
+import { PageHeader } from "../_components/PageHeader";
+import { WhatsAppIcon } from "../_components/icons";
 import { openWhatsApp, useContactInfo } from "@/lib/whatsapp";
 
 const iconProps = {

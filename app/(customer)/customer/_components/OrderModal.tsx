@@ -2,10 +2,10 @@
 
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { ProductVisual } from "@/components/customer/ProductVisual";
-import { ChevronDownIcon, CloseIcon, MinusIcon, PlusIcon } from "@/components/customer/icons";
+import { ProductVisual } from "./ProductVisual";
+import { ChevronDownIcon, CloseIcon, MinusIcon, PlusIcon } from "./icons";
 import { parseVarian } from "@/lib/whatsapp";
-import { useCart } from "./CartContext";
+import { useCart } from "@/components/customer/CartContext";
 
 interface OrderModalProps {
   product: any | null;
