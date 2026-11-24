@@ -33,25 +33,32 @@ export function LoginCard({ email, onEmail, password, onPassword, loading, error
           )}
 
           <LoginField id="email" label="Email" type="email" autoComplete="username" inputMode="email" value={email} onChange={onEmail} invalid={!!error} placeholder="nama@email.com" />
-          <LoginField
-            id="password"
-            label="Kata sandi"
-            type={showPassword ? "text" : "password"}
-            autoComplete="current-password"
-            value={password}
-            onChange={onPassword}
-            invalid={!!error}
-            placeholder="Masukkan kata sandi"
-            trailing={
-              <button type="button" onClick={() => setShowPassword((s) => !s)} aria-label={showPassword ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"} className="flex size-9 items-center justify-center rounded-lg text-faint transition hover:text-ink">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z" />
-                  <circle cx="12" cy="12" r="3" />
-                  {showPassword && <path d="M4 4l16 16" />}
-                </svg>
-              </button>
-            }
-          />
+          <div className="space-y-2">
+            <LoginField
+              id="password"
+              label="Kata sandi"
+              type={showPassword ? "text" : "password"}
+              autoComplete="current-password"
+              value={password}
+              onChange={onPassword}
+              invalid={!!error}
+              placeholder="Masukkan kata sandi"
+              trailing={
+                <button type="button" onClick={() => setShowPassword((s) => !s)} aria-label={showPassword ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"} className="flex size-9 items-center justify-center rounded-lg text-faint transition hover:text-ink">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z" />
+                    <circle cx="12" cy="12" r="3" />
+                    {showPassword && <path d="M4 4l16 16" />}
+                  </svg>
+                </button>
+              }
+            />
+            <div className="flex justify-end">
+              <Link href="/forgot-password" className="text-[13px] font-semibold text-[#0244FF] underline-offset-4 transition hover:text-[#00236F] hover:underline">
+                Lupa kata sandi?
+              </Link>
+            </div>
+          </div>
 
           <button
             type="submit"
