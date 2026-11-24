@@ -9,6 +9,7 @@ export const SIDEBAR_MENU: SidebarMenuItem[] = [
   { label: "Asisten AI", href: "/dashboard/ai", icon: "bot" },
   { label: "Riwayat & Audit", href: "/dashboard/audit", icon: "history" },
   { label: "Pengelola Pesanan", href: "/dashboard/orders", icon: "orders" },
+  { label: "Kelola Pengguna", href: "/dashboard/users", icon: "users", superAdminOnly: true },
   { label: "CMS System", href: "/dashboard/cms", icon: "cms", superAdminOnly: true },
   { label: "Profil & Pengaturan", href: "/dashboard/profile", icon: "settings" },
 ];

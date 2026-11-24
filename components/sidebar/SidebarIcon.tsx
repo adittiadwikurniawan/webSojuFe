@@ -37,6 +37,14 @@ const PATHS = {
       <path d="M3 9.5h18M7 14.5h6" />
     </>
   ),
+  users: (
+    <>
+      <circle cx="9.5" cy="8.5" r="3" />
+      <path d="M3.5 19a6 6 0 0 1 12 0" />
+      <circle cx="17" cy="9.5" r="2.2" />
+      <path d="M15.5 15.2a4.6 4.6 0 0 1 5 3.8" />
+    </>
+  ),
   settings: (
     <>
       <path d="M6 4v5m0 4v7M12 4v2m0 4v10M18 4v8m0 4v4" />

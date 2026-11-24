@@ -11,18 +11,35 @@ import { isDemoPreviewSession } from "@/lib/demo-preview";
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [allowed, setAllowed] = useState(false);
+  const [role, setRole] = useState<string | null>(null);
+  const restricted = pathname.startsWith("/dashboard/cms") || pathname.startsWith("/dashboard/users");
+
   useEffect(() => {
+    let active = true;
     if (isDemoPreviewSession()) {
-      setAllowed(true);
-      return;
+      Promise.resolve().then(() => {
+        if (active) setRole("SUPER_ADMIN");
+      });
+      return () => {
+        active = false;
+      };
     }
     api.auth.getMe().then((response) => {
-      const restricted = pathname.startsWith("/dashboard/cms");
-      if (restricted && response.data.peran !== "SUPER_ADMIN") router.replace("/dashboard/data");
-      else setAllowed(true);
-    }).catch(() => router.replace("/login"));
-  }, [pathname, router]);
+      if (!active) return;
+      const userRole = String(response.data?.peran || "ADMIN");
+      setRole(userRole);
+      if (restricted && userRole !== "SUPER_ADMIN") {
+        router.replace("/dashboard/data");
+      }
+    }).catch(() => {
+      if (active) router.replace("/login");
+    });
+    return () => {
+      active = false;
+    };
+  }, [pathname, restricted, router]);
+
+  const allowed = role !== null && (!restricted || role === "SUPER_ADMIN");
   if (!allowed) return <div className="p-8 text-sm text-slate-500">Memeriksa hak akses…</div>;
   return (
     <ToastProvider>
