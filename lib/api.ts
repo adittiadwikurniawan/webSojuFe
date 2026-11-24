@@ -21,34 +21,40 @@ const clearToken = (): void => {
   }
 };
 
+type ApiRequestOptions = RequestInit & {
+  requiresAuth?: boolean;
+};
+
 // Generic API request function
 async function apiRequest<T>(
   endpoint: string,
-  options: RequestInit = {}
+  options: ApiRequestOptions = {}
 ): Promise<T> {
+  const { requiresAuth = true, ...fetchOptions } = options;
+
   if (isDemoPreviewSession()) {
-    return handleDemoPreviewRequest<T>(endpoint, options);
+    return handleDemoPreviewRequest<T>(endpoint, fetchOptions);
   }
-  const token = getToken();
+  const token = requiresAuth ? getToken() : null;
   const url = `${API_BASE_URL}${endpoint}`;
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    ...(options.headers as Record<string, string>),
+    ...(fetchOptions.headers as Record<string, string>),
   };
 
-  if (token) {
+  if (requiresAuth && token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
   const response = await fetch(url, {
-    ...options,
+    ...fetchOptions,
     headers,
   });
 
   if (!response.ok) {
-    // Handle 401 globally: clear stale token and redirect to login
-    if (response.status === 401 && typeof window !== 'undefined') {
+    // Handle 401 globally on authenticated requests: clear stale token and redirect to login
+    if (requiresAuth && response.status === 401 && typeof window !== 'undefined') {
       clearToken();
       window.location.href = '/login';
       // Return a never-resolving promise so callers don't see a confusing error
@@ -67,6 +73,7 @@ export const authApi = {
     const response = await apiRequest<{ success: boolean; data: { token: string; user: any } }>('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
+      requiresAuth: false,
     });
     
     if (response.success && response.data.token) {
@@ -82,6 +89,18 @@ export const authApi = {
 
   updateMe: async (data: { nama: string; email: string }) => apiRequest<{ success: boolean; data: any }>('/auth/me', { method: 'PATCH', body: JSON.stringify(data) }),
   changePassword: async (passwordLama: string, passwordBaru: string) => apiRequest<{ success: boolean; message?: string }>('/auth/change-password', { method: 'POST', body: JSON.stringify({ passwordLama, passwordBaru }) }),
+  forgotPassword: async (email: string) =>
+    apiRequest<{ success: boolean; data: null; message?: string }>('/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+      requiresAuth: false,
+    }),
+  resetPassword: async (token: string, passwordBaru: string) =>
+    apiRequest<{ success: boolean; data: null; message?: string }>('/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ token, passwordBaru }),
+      requiresAuth: false,
+    }),
 
   logout: () => {
     clearToken();
@@ -475,9 +494,271 @@ export const auditLogApi = {
   },
 };
 
+export type AdminUserRole = 'ADMIN' | 'SUPER_ADMIN';
+
+export interface AdminUserRecord {
+  id: number;
+  nama: string;
+  email: string;
+  peran: AdminUserRole;
+  aktif: boolean;
+  terakhirMasukPada: string | null;
+  dibuatOleh: number | null;
+  dibuatPada: string;
+  diubahPada: string;
+}
+
+export interface ListUsersFilters {
+  search?: string;
+  peran?: AdminUserRole | '';
+  aktif?: boolean | 'true' | 'false' | '';
+}
+
+export interface CreateAdminUserPayload {
+  nama: string;
+  email: string;
+  password?: string;
+  peran: AdminUserRole;
+  sendInvite?: boolean;
+}
+
+export interface UpdateAdminUserPayload {
+  nama?: string;
+  email?: string;
+  peran?: AdminUserRole;
+}
+
 export const usersApi = {
-  getAll: () => apiRequest<{ success: boolean; data: any[] }>('/users'),
-  create: (data: { nama: string; email: string; password: string; peran: 'ADMIN' | 'SUPER_ADMIN' }) => apiRequest<{ success: boolean; data: any }>('/users', { method: 'POST', body: JSON.stringify(data) }),
+  getAll: (filters?: ListUsersFilters) => {
+    const params = new URLSearchParams();
+    if (filters?.search && filters.search.trim()) params.append('search', filters.search.trim());
+    if (filters?.peran) params.append('peran', filters.peran);
+    if (filters?.aktif !== undefined && filters.aktif !== '') {
+      params.append('aktif', String(filters.aktif));
+    }
+    const query = params.toString();
+    return apiRequest<{ success: boolean; data: AdminUserRecord[] }>(query ? `/users?${query}` : '/users');
+  },
+
+  create: (data: CreateAdminUserPayload) =>
+    apiRequest<{ success: boolean; data: AdminUserRecord; message?: string }>('/users', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  update: (id: number, data: UpdateAdminUserPayload) =>
+    apiRequest<{ success: boolean; data: AdminUserRecord; message?: string }>(`/users/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
+
+  updateStatus: (id: number, aktif: boolean) =>
+    apiRequest<{ success: boolean; data: AdminUserRecord; message?: string }>(`/users/${id}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ aktif }),
+    }),
+
+  resetPassword: (id: number) =>
+    apiRequest<{ success: boolean; data: { userId: number; email: string }; message?: string }>(
+      `/users/${id}/reset-password`,
+      { method: 'POST' }
+    ),
+
+  softDelete: (id: number) =>
+    apiRequest<{ success: boolean; data: AdminUserRecord; message?: string }>(`/users/${id}`, {
+      method: 'DELETE',
+    }),
+};
+
+// Hybrid RAG AI API
+export type AiMessageRole = 'USER' | 'ASSISTANT';
+export type AiRoutePath = 'SQL_TOOL' | 'VECTOR_RAG' | 'ACTION_DRAFT' | 'REFUSAL';
+export type AiDocumentSourceType = 'SOP' | 'FAQ' | 'PRODUK' | 'CMS' | 'MANUAL';
+export type ManualAiSourceType = 'SOP' | 'FAQ' | 'MANUAL';
+export type AiRoleScope = 'ALL_ADMIN' | 'SUPER_ADMIN';
+
+export interface AiDocumentCitation {
+  id: string;
+  documentId: number;
+  chunkId: number;
+  chunkIndex: number;
+  title: string;
+  sourceType: AiDocumentSourceType;
+  sourceRef: string | null;
+  roleScope: AiRoleScope;
+  snippet: string;
+  score: number;
+}
+
+export interface AiSqlCitation {
+  id: string;
+  sourceType: 'SQL_TOOL';
+  toolName: string;
+  label: string;
+  querySummary: string;
+  executedAt: string;
+}
+
+export type AiCitation = AiDocumentCitation | AiSqlCitation;
+
+export interface AiActionDraftSummaryRow {
+  label: string;
+  value: string;
+}
+
+export interface AiActionDraftLineItem {
+  produkId: number | null;
+  nama: string;
+  jumlah: number;
+  satuan: string;
+  hargaSatuan: number;
+  subtotal: number;
+  metode: 'QRIS' | 'CASH';
+}
+
+export interface AiActionDraft {
+  id: string;
+  type: 'CREATE_TRANSACTION' | 'CREATE_ORDER';
+  intent: 'PENJUALAN' | 'PEMBELIAN' | 'TRANSAKSI' | 'PESANAN';
+  requiresConfirmation: true;
+  endpoint: '/api/v1/transactions';
+  method: 'POST';
+  title: string;
+  sheet: 'Transaksi' | 'Order';
+  summaryRows: AiActionDraftSummaryRow[];
+  total: string;
+  totalAmount: number;
+  sourceBadge: 'AI';
+  badge: string;
+  dateLabel: string;
+  shiftLabel: string;
+  totalLabel: string;
+  breakdownTitle: string;
+  items: AiActionDraftLineItem[];
+  confirmLabel: string;
+  correctLabel: string;
+  note: string;
+  payload: Record<string, unknown>;
+  isReadyToConfirm: boolean;
+  missingFields: string[];
+}
+
+export interface AiMessageDto {
+  id: number;
+  conversationId: number;
+  role: AiMessageRole;
+  content: string;
+  routePath: AiRoutePath | null;
+  citations: AiCitation[];
+  actions: AiActionDraft[];
+  createdAt: string;
+}
+
+export interface AiChatRequest {
+  message: string;
+  conversationId?: number | null;
+}
+
+export interface AiChatResponse {
+  conversationId: number;
+  title: string;
+  routePath: AiRoutePath;
+  reply: string;
+  citations: AiCitation[];
+  actions: AiActionDraft[];
+  userMessage: AiMessageDto;
+  assistantMessage: AiMessageDto;
+}
+
+export interface AiConversationSummary {
+  id: number;
+  penggunaId: number;
+  title: string;
+  messageCount: number;
+  lastMessagePreview: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AiConversationDetail {
+  id: number;
+  penggunaId: number;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+  messages: AiMessageDto[];
+}
+
+export interface AiReindexResponse {
+  documentsProcessed: number;
+  chunksCreated: number;
+  piiRedactedChunks: number;
+  sources: {
+    documents: number;
+    products: number;
+    cms: number;
+  };
+}
+
+export interface AiUploadDocumentPayload {
+  title: string;
+  content: string;
+  sourceType?: ManualAiSourceType;
+  roleScope?: AiRoleScope;
+  sourceRef?: string | null;
+  rejectOnPii?: boolean;
+}
+
+export interface AiUploadDocumentResponse {
+  document: {
+    id: number;
+    title: string;
+    sourceType: AiDocumentSourceType;
+    sourceRef: string | null;
+    roleScope: AiRoleScope;
+    content: string;
+    aktif: boolean;
+  };
+  indexing: {
+    documentId: number;
+    chunksCreated: number;
+    piiRedactedChunks: number;
+    roleScope: AiRoleScope;
+  };
+}
+
+export const aiApi = {
+  chat: (payload: AiChatRequest) =>
+    apiRequest<{ success: boolean; data: AiChatResponse; message?: string }>('/ai/chat', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  getConversations: (limit?: number) => {
+    const params = new URLSearchParams();
+    if (limit !== undefined) params.append('limit', String(limit));
+    const query = params.toString();
+    return apiRequest<{ success: boolean; data: AiConversationSummary[] }>(
+      query ? `/ai/conversations?${query}` : '/ai/conversations'
+    );
+  },
+
+  getConversation: (id: number) =>
+    apiRequest<{ success: boolean; data: AiConversationDetail }>(`/ai/conversations/${id}`),
+
+  reindex: () =>
+    apiRequest<{ success: boolean; data: AiReindexResponse; message?: string }>('/ai/reindex', {
+      method: 'POST',
+    }),
+
+  uploadDocument: (payload: AiUploadDocumentPayload) =>
+    apiRequest<{ success: boolean; data: AiUploadDocumentResponse; message?: string }>(
+      '/ai/documents',
+      {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }
+    ),
 };
 
 export const customerOrdersApi = {
@@ -565,6 +846,7 @@ export const api = {
   reports: reportsApi,
   auditLog: auditLogApi,
   users: usersApi,
+  ai: aiApi,
   customerOrders: customerOrdersApi,
   freeTables: freeTablesApi,
   cms: cmsApi,

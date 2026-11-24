@@ -4,7 +4,15 @@ const API_ROOT = (process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000
 const CUSTOMER_API = `${API_ROOT}/api/customer`;
 const TOKEN_KEY = "customer_auth_token";
 
-export type CustomerProfile = { id: number; nama: string; email: string; noTelepon: string; alamat: string; dibuatPada?: string };
+export type CustomerProfile = {
+  id: number;
+  nama: string;
+  email: string;
+  noTelepon: string;
+  alamat: string;
+  dibuatPada?: string;
+  emailTerverifikasiPada?: string | null;
+};
 export type CustomerCartItem = { productId: number; nama?: string; varian: string; jumlah: number; catatan: string; harga?: number; satuan?: string; gambar?: string | null };
 
 export const customerToken = {
@@ -59,6 +67,25 @@ async function request<T>(path: string, options: RequestInit = {}, requiresAuth 
       localStorage.setItem("soju_customer_cart", "[]");
       return { success: true, data: order, message: "Pesanan demo berhasil dibuat" } as T;
     }
+    if (path === "/auth/lupa-password" && method === "POST") {
+      return { success: true, data: null, message: "Jika email terdaftar dan aktif, tautan reset password telah dikirim ke email Anda." } as T;
+    }
+    if (path === "/auth/reset-password" && method === "POST") {
+      return { success: true, data: null, message: "Password berhasil diatur ulang. Silakan masuk dengan password baru Anda." } as T;
+    }
+    if (path === "/auth/verifikasi-email" && method === "POST") {
+      const raw = localStorage.getItem("soju_customer_profile");
+      const current = raw ? JSON.parse(raw) : { id: 1, nama: "Budi Santoso", email: "budi@demo.local", noTelepon: "0812-3456-7890", alamat: "Jl. Demo No. 10, Bandung" };
+      const verified = { ...current, emailTerverifikasiPada: new Date().toISOString() };
+      localStorage.setItem("soju_customer_profile", JSON.stringify(verified));
+      return { success: true, data: verified, message: "Email berhasil diverifikasi." } as T;
+    }
+    if (path === "/auth/kirim-ulang-verifikasi" && method === "POST") {
+      return { success: true, data: null, message: "Jika email terdaftar dan belum terverifikasi, tautan verifikasi baru telah dikirim ke email Anda." } as T;
+    }
+    if (path === "/ubah-password" && method === "POST") {
+      return { success: true, data: null, message: "Password berhasil diperbarui." } as T;
+    }
     if (path === "/pesanan") {
       const orders = JSON.parse(localStorage.getItem("soju_customer_orders") || "[]");
       return { success: true, data: orders } as T;
@@ -94,6 +121,36 @@ export const customerApi = {
     return result;
   },
   logout: () => customerToken.clear(),
+  forgotPassword: (email: string) =>
+    request<{ success: boolean; data: null; message?: string }>(
+      "/auth/lupa-password",
+      { method: "POST", body: JSON.stringify({ email }) },
+      false
+    ),
+  resetPassword: (token: string, passwordBaru: string) =>
+    request<{ success: boolean; data: null; message?: string }>(
+      "/auth/reset-password",
+      { method: "POST", body: JSON.stringify({ token, passwordBaru }) },
+      false
+    ),
+  verifyEmail: (token: string) =>
+    request<{ success: boolean; data: CustomerProfile; message?: string }>(
+      "/auth/verifikasi-email",
+      { method: "POST", body: JSON.stringify({ token }) },
+      false
+    ),
+  resendVerification: (email: string) =>
+    request<{ success: boolean; data: null; message?: string }>(
+      "/auth/kirim-ulang-verifikasi",
+      { method: "POST", body: JSON.stringify({ email }) },
+      false
+    ),
+  changePassword: (passwordLama: string, passwordBaru: string) =>
+    request<{ success: boolean; data: null; message?: string }>(
+      "/ubah-password",
+      { method: "POST", body: JSON.stringify({ passwordLama, passwordBaru }) },
+      true
+    ),
   getProfile: () => request<{ success: boolean; data: CustomerProfile }>("/profil"),
   updateProfile: (data: Partial<Pick<CustomerProfile, "nama" | "email" | "noTelepon" | "alamat">>) =>
     request<{ success: boolean; data: CustomerProfile }>("/profil", { method: "PATCH", body: JSON.stringify(data) }),
