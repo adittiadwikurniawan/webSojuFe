@@ -110,7 +110,9 @@ export function JenisEntriesTable({ jenis, refreshKey, onChanged }: JenisEntries
           }}
         />
       </div>
-      <div className="overflow-x-auto">
+
+      {/* Tampilan Tabel Desktop/Tablet (>=768px) */}
+      <div className="hidden overflow-x-auto md:block">
         <table className="w-full text-[13.5px]">
           <thead className="bg-app">
             <tr>
@@ -172,6 +174,71 @@ export function JenisEntriesTable({ jenis, refreshKey, onChanged }: JenisEntries
           </tbody>
         </table>
       </div>
+
+      {/* Tampilan Kartu Mobile (<768px) */}
+      <div className="divide-y divide-line-soft md:hidden">
+        {loading ? (
+          <div className="px-4 py-10 text-center text-sm text-faint">Memuat...</div>
+        ) : entries.length === 0 ? (
+          <InlineState
+            kind="kosong"
+            compact
+            title={hasSearch ? "Tidak ada hasil pencarian" : "Belum ada entri"}
+            description={hasSearch ? "Coba kata kunci lain." : "Belum ada entri untuk jenis ini. Tambah lewat tombol “Tambah Transaksi” di atas."}
+          />
+        ) : (
+          entries.map((e) => (
+            <article
+              key={e.id}
+              onClick={() => setEditEntry(e)}
+              className="flex cursor-pointer flex-col gap-3 p-4 transition-colors active:bg-app/70"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="break-words text-[14px] font-bold text-ink">{e.detail || "-"}</p>
+                  <p className="mt-0.5 font-mono text-[11.5px] font-semibold text-brand">{e.kode || "-"}</p>
+                </div>
+                <span className={"tabular shrink-0 text-[14.5px] font-extrabold " + (masuk ? "text-ok-text" : "text-bad")}>
+                  {formatRupiah(e.nominal)}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-x-3 gap-y-2 rounded-xl bg-app/70 p-3 text-[12px]">
+                <div>
+                  <span className="block text-[10.5px] font-bold uppercase tracking-wider text-faint">Tanggal</span>
+                  <TanggalCell tanggal={e.tanggal} />
+                </div>
+                <div>
+                  <span className="block text-[10.5px] font-bold uppercase tracking-wider text-faint">Jenis</span>
+                  <span className="font-semibold text-ink">{e.namaTransaksi}</span>
+                </div>
+                <div>
+                  <span className="block text-[10.5px] font-bold uppercase tracking-wider text-faint">Debit</span>
+                  <span className="break-words font-medium text-body">{e.debit || "-"}</span>
+                </div>
+                <div>
+                  <span className="block text-[10.5px] font-bold uppercase tracking-wider text-faint">Kredit</span>
+                  <span className="break-words font-medium text-body">{e.kredit || "-"}</span>
+                </div>
+                {columns.map((c) => (
+                  <div key={c.id}>
+                    <span className="block text-[10.5px] font-bold uppercase tracking-wider text-faint">{c.namaKolom}</span>
+                    <span className="break-words font-medium text-body">{e.customData?.[String(c.id)] ?? "-"}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex justify-end" onClick={(ev) => ev.stopPropagation()}>
+                <RowActions
+                  onEdit={() => setEditEntry(e)}
+                  onDelete={() => deleteEntry(e)}
+                />
+              </div>
+            </article>
+          ))
+        )}
+      </div>
+
       <Pagination page={page} totalPages={Math.ceil(total / pageSize)} total={total} pageSize={pageSize} onPage={setPage} onPageSize={(size) => { setPageSize(size); setPage(1); }} />
 
       {editEntry && (

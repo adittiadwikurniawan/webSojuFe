@@ -11,12 +11,12 @@ export function LogItem({ log: l, expanded, onToggle }: LogItemProps) {
   const isDelete = ["HAPUS", "DELETE", "REMOVED"].includes(l.action.toUpperCase());
 
   return (
-    <div className="px-5 py-2">
-      <div className="relative flex flex-col gap-3 rounded-2xl border border-line-soft bg-[#fbfcff] p-4 transition-shadow hover:shadow-card">
+    <div className="px-3 py-2 sm:px-5">
+      <div className="relative flex flex-col gap-3 rounded-2xl border border-line-soft bg-[#fbfcff] p-3.5 transition-shadow hover:shadow-card sm:p-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="flex min-w-0 flex-wrap items-center gap-2">
             <span className={"size-2.5 shrink-0 rounded-full " + TONE_DOT[meta.tone]} aria-hidden="true" />
-            <span className="text-[14.5px] font-bold tracking-[-.01em] text-ink">{l.recordLabel}</span>
+            <span className="break-words text-[14.5px] font-bold tracking-[-.01em] text-ink">{l.recordLabel}</span>
             <span className={"rounded-full px-2.5 py-1 text-[10.5px] font-extrabold uppercase tracking-[.06em] " + TONE_CHIP[sTone]}>{l.sheet}</span>
             <span className={"rounded-full px-2.5 py-1 text-[10.5px] font-extrabold uppercase tracking-[.06em] " + (isAi ? TONE_CHIP.sky : TONE_CHIP.neutral)}>{l.source}</span>
             <span className={"rounded-full px-2.5 py-1 text-[10.5px] font-extrabold " + TONE_CHIP[meta.tone]}>{meta.label}</span>

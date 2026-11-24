@@ -34,7 +34,7 @@ export function ProfileMenu() {
         <span className="flex size-[38px] items-center justify-center rounded-full bg-[linear-gradient(160deg,#FFB547,#F08A00)] text-[13px] font-extrabold text-white">
           {USER.initials}
         </span>
-        <span>
+        <span className="hidden sm:block">
           <span className="block text-[13.5px] font-bold leading-tight">{USER.name}</span>
           <span className="block text-[11px] text-muted">{USER.role}</span>
         </span>
@@ -42,7 +42,7 @@ export function ProfileMenu() {
       </button>
 
       {open && (
-        <div role="menu" className="absolute right-0 top-full z-40 mt-3 w-[300px] rounded-[20px] border border-line-soft bg-white p-2 shadow-pop">
+        <div role="menu" className="absolute right-0 top-full z-40 mt-3 w-[280px] max-w-[calc(100vw-2rem)] rounded-[20px] border border-line-soft bg-white p-2 shadow-pop sm:w-[300px]">
           <div className="mb-1.5 border-b border-[#eef0f5] px-3 pb-3.5 pt-3">
             <p className="text-sm font-bold">{USER.name}</p>
             <p className="text-xs text-muted">{USER.email}</p>

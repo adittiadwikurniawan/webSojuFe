@@ -21,7 +21,7 @@ export function Pagination({ page, totalPages, total, pageSize, onPage, onPageSi
         <span className="text-xs font-medium text-muted">Menampilkan {visible} dari {total} data</span>
         <label className="flex items-center gap-2 text-xs font-medium text-muted">
           Tampilkan
-          <select value={pageSize} onChange={(event) => onPageSize(Number(event.target.value))} className="rounded-lg border border-line bg-field px-3 py-2 font-semibold text-navy shadow-inset focus:border-brand focus:outline-none focus:ring-4 focus:ring-brand/10">
+          <select value={pageSize} onChange={(event) => onPageSize(Number(event.target.value))} className="rounded-lg border border-line bg-field px-3 py-2 text-base font-semibold text-navy shadow-inset focus:border-brand focus:outline-none focus:ring-4 focus:ring-brand/10 sm:text-xs">
             {[10, 50, 100].map((size) => <option key={size} value={size}>{size}</option>)}
           </select>
           per halaman

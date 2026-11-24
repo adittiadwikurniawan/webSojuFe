@@ -16,7 +16,7 @@ export function DataSearch({ value, onChange }: DataSearchProps) {
         placeholder="Cari keterangan, jenis, tanggal, atau nominal..."
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="h-11 w-full rounded-xl border border-line bg-field pl-10 pr-10 text-sm text-ink shadow-inset placeholder:text-faint focus:border-brand focus:outline-none focus:ring-4 focus:ring-brand/10"
+        className="h-11 w-full rounded-xl border border-line bg-field pl-10 pr-10 text-base text-ink shadow-inset placeholder:text-faint focus:border-brand focus:outline-none focus:ring-4 focus:ring-brand/10 sm:text-sm"
       />
       {value && (
         <button

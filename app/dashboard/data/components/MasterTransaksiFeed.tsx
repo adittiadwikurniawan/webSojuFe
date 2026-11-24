@@ -46,6 +46,7 @@ export function MasterTransaksiFeed({ refreshKey, onOpenJenis }: MasterTransaksi
   }, [refreshKey, page, pageSize, debouncedSearch]);
 
   const hasSearch = searchTerm.trim().length > 0;
+  const isEmpty = !Array.isArray(entries) || entries.length === 0;
 
   return (
     <Panel className="overflow-hidden">
@@ -58,7 +59,9 @@ export function MasterTransaksiFeed({ refreshKey, onOpenJenis }: MasterTransaksi
           }}
         />
       </div>
-      <div className="overflow-x-auto">
+
+      {/* Tampilan Tabel Desktop/Tablet (>=768px) */}
+      <div className="hidden overflow-x-auto md:block">
         <table className="w-full text-[13.5px]">
           <thead className="bg-app">
             <tr>
@@ -73,7 +76,7 @@ export function MasterTransaksiFeed({ refreshKey, onOpenJenis }: MasterTransaksi
           <tbody className="divide-y divide-line-soft">
             {loading ? (
               <tr><td colSpan={6} className="px-5 py-10 text-center text-faint">Memuat...</td></tr>
-            ) : !Array.isArray(entries) || entries.length === 0 ? (
+            ) : isEmpty ? (
               <tr>
                 <td colSpan={6}>
                   <InlineState
@@ -108,6 +111,51 @@ export function MasterTransaksiFeed({ refreshKey, onOpenJenis }: MasterTransaksi
           </tbody>
         </table>
       </div>
+
+      {/* Tampilan Kartu Mobile (<768px) */}
+      <div className="divide-y divide-line-soft md:hidden">
+        {loading ? (
+          <div className="px-4 py-10 text-center text-sm text-faint">Memuat...</div>
+        ) : isEmpty ? (
+          <InlineState
+            kind="kosong"
+            compact
+            title={hasSearch ? "Tidak ada hasil pencarian" : "Belum ada transaksi"}
+            description={hasSearch ? "Coba kata kunci lain." : "Tambah lewat tombol “Tambah Transaksi” di atas."}
+          />
+        ) : (
+          entries.map((e) => {
+            const masuk = e.jenisTransaksi?.arah === "PEMASUKAN";
+            return (
+              <article
+                key={e.id}
+                onClick={() => onOpenJenis(e.jenisTransaksiId)}
+                className="flex cursor-pointer flex-col gap-2.5 p-4 transition-colors active:bg-app/70"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex min-w-0 items-start gap-2.5">
+                    <div className="mt-0.5 shrink-0">
+                      <ArahIcon arah={e.jenisTransaksi?.arah} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="break-words text-[14px] font-bold leading-snug text-ink">{e.detail || "-"}</p>
+                      <p className="mt-0.5 font-mono text-[11.5px] font-semibold text-brand">{e.kode || "-"}</p>
+                    </div>
+                  </div>
+                  <span className={"tabular shrink-0 text-right text-[14px] font-extrabold " + (masuk ? "text-ok-text" : "text-bad")}>
+                    {masuk ? "+" : "-"} {formatRupiah(e.nominal)}
+                  </span>
+                </div>
+                <div className="flex flex-wrap items-center justify-between gap-2 pl-10">
+                  <TanggalCell tanggal={e.tanggal} />
+                  <JenisBadge arah={e.jenisTransaksi?.arah} nama={e.namaTransaksi} />
+                </div>
+              </article>
+            );
+          })
+        )}
+      </div>
+
       <Pagination page={page} totalPages={Math.ceil(total / pageSize)} total={total} pageSize={pageSize} onPage={setPage} onPageSize={(size) => { setPageSize(size); setPage(1); }} />
     </Panel>
   );

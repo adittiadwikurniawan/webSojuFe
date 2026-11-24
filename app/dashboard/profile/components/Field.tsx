@@ -24,7 +24,7 @@ type FieldProps = {
 const CHEVRON = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23737687' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`;
 
 const FIELD =
-  "w-full rounded-input border border-transparent bg-field px-4 text-[14px] text-ink placeholder:text-faint transition focus:border-brand focus:bg-white focus:outline-none focus:ring-4 focus:ring-brand/15 focus-visible:outline-none";
+  "w-full rounded-input border border-transparent bg-field px-4 text-base text-ink placeholder:text-faint transition focus:border-brand focus:bg-white focus:outline-none focus:ring-4 focus:ring-brand/15 focus-visible:outline-none sm:text-[14px]";
 
 export function Field({
   label,

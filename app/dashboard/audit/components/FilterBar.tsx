@@ -33,7 +33,7 @@ export function FilterBar({ sheet, onSheet, source, onSource, search, onSearch, 
   return (
     <Panel padding="md" className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-3">
-        <div className="flex min-w-[240px] flex-1 items-center gap-2 rounded-full bg-app px-4 py-2.5 text-faint">
+        <div className="flex w-full min-w-0 items-center gap-2 rounded-full bg-app px-4 py-2.5 text-faint sm:min-w-[240px] sm:flex-1">
           <Icon name="search" size={16} />
           <input
             value={search}
@@ -41,7 +41,7 @@ export function FilterBar({ sheet, onSheet, source, onSource, search, onSearch, 
             aria-label="Cari riwayat audit"
             type="text"
             placeholder="Cari ID audit, deskripsi, nama record, actor…"
-            className="w-full bg-transparent text-[14px] text-ink outline-none placeholder:text-faint"
+            className="w-full bg-transparent text-base text-ink outline-none placeholder:text-faint sm:text-[14px]"
           />
         </div>
         <Button variant="outline" icon="calendar" onClick={() => setDateFormOpen((open) => !open)}>Rentang Tanggal</Button>
@@ -58,11 +58,11 @@ export function FilterBar({ sheet, onSheet, source, onSource, search, onSearch, 
         <form onSubmit={(event) => { event.preventDefault(); onApplyDates(); setDateFormOpen(false); }} className="flex flex-wrap items-end gap-3 rounded-xl border border-line-soft bg-app p-4">
           <label className="flex flex-col gap-1 text-xs font-bold text-label">
             Tanggal mulai
-            <input type="date" value={dateFrom} max={dateTo || undefined} onChange={(event) => onDateFrom(event.target.value)} className="rounded-lg border border-line bg-white px-3 py-2 text-sm text-ink" />
+            <input type="date" value={dateFrom} max={dateTo || undefined} onChange={(event) => onDateFrom(event.target.value)} className="rounded-lg border border-line bg-white px-3 py-2 text-base text-ink sm:text-sm" />
           </label>
           <label className="flex flex-col gap-1 text-xs font-bold text-label">
             Tanggal akhir
-            <input type="date" value={dateTo} min={dateFrom || undefined} onChange={(event) => onDateTo(event.target.value)} className="rounded-lg border border-line bg-white px-3 py-2 text-sm text-ink" />
+            <input type="date" value={dateTo} min={dateFrom || undefined} onChange={(event) => onDateTo(event.target.value)} className="rounded-lg border border-line bg-white px-3 py-2 text-base text-ink sm:text-sm" />
           </label>
           <Button type="submit" variant="secondary">Terapkan</Button>
           {dateRangeActive && <Button type="button" variant="outline" onClick={() => { onClearDates(); setDateFormOpen(false); }}>Hapus rentang</Button>}
