@@ -25,7 +25,8 @@ export function AiNotice({ notice, onRetry, onEdit, onPickCommand }: AiNoticePro
             </>
           }
         >
-          Layanan Asisten AI sedang sibuk atau koneksimu terputus. Pesanmu masih tersimpan, tinggal kirim ulang.
+          {notice.detail ||
+            "Layanan Asisten AI sedang sibuk atau koneksimu terputus. Pesanmu masih tersimpan, tinggal kirim ulang."}
         </StateBanner>
       </div>
     );
