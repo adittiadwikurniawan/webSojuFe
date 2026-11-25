@@ -1,15 +1,41 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { api } from "@/lib/api";
 import { Icon } from "./Icon";
 import { greeting } from "./format";
-
-const OWNER = "Bu Pemilik";
 
 type WelcomeHeaderProps = { period: string | null };
 
 export function WelcomeHeader({ period }: WelcomeHeaderProps) {
   const [selectedDate, setSelectedDate] = useState("");
+  const [ownerName, setOwnerName] = useState("Admin");
+
+  useEffect(() => {
+    let active = true;
+    api.auth
+      .getMe()
+      .then((res) => {
+        if (active && res.success && res.data?.nama) {
+          setOwnerName(String(res.data.nama));
+        }
+      })
+      .catch(() => {});
+
+    const handleProfileUpdated = (event: Event) => {
+      const detail = (event as CustomEvent<{ nama?: string }>).detail;
+      if (active && detail?.nama) {
+        setOwnerName(String(detail.nama));
+      }
+    };
+
+    window.addEventListener("soju-profile-updated", handleProfileUpdated);
+    return () => {
+      active = false;
+      window.removeEventListener("soju-profile-updated", handleProfileUpdated);
+    };
+  }, []);
+
   const displayedDate = selectedDate
     ? new Intl.DateTimeFormat("id-ID", { day: "numeric", month: "long", year: "numeric" }).format(new Date(`${selectedDate}T00:00:00`))
     : period || "Pilih tanggal";
@@ -35,7 +61,7 @@ export function WelcomeHeader({ period }: WelcomeHeaderProps) {
             Dapur Soju <span className="font-medium text-white/55">/ Pusat Kendali</span>
           </p>
           <h1 className="mt-3 text-[28px] font-bold leading-[1.15] tracking-[-.035em] sm:text-[34px]">
-            {greeting()}, {OWNER}
+            {greeting()}, {ownerName}
           </h1>
           <p className="mt-2 max-w-xl text-sm leading-6 text-white/70">
             Pantau ringkasan kas dan aktivitas operasional tokomu hari ini.

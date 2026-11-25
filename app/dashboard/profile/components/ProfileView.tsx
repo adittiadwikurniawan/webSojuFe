@@ -66,6 +66,7 @@ export function ProfileView() {
     try {
       const result = await api.auth.updateMe({ nama: user.nama, email: user.email });
       setUser((prev) => ({ ...prev, id: result.data.id, peran: result.data.peran, nama: result.data.nama, email: result.data.email }));
+      window.dispatchEvent(new CustomEvent("soju-profile-updated", { detail: result.data }));
       setSavedFlash(true);
       setTimeout(() => setSavedFlash(false), 2200);
     } catch (error) {
