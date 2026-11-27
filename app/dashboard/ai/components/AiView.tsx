@@ -267,6 +267,7 @@ export function AiView({ initialInput = "" }: { initialInput?: string }) {
     setActiveChip(chip);
     if (chip === "laporan") setInput("Berapa total penjualan dan pengeluaran 7 hari terakhir?");
     else if (chip === "sop") setInput("Bagaimana SOP pencatatan transaksi di SOJU?");
+    else if (chip === "produk") setInput("tambah barang ");
     else if (chip === "jual") setInput("/add jual ");
     else if (chip === "beli") setInput("/add beli ");
     else if (chip === "order") setInput("Berapa jumlah pesanan pelanggan terbaru beserta statusnya?");
@@ -310,31 +311,48 @@ export function AiView({ initialInput = "" }: { initialInput?: string }) {
       [draftKey]: { status: "saving" },
     }));
 
+    const isProductDraft =
+      draft.type === "CREATE_PRODUCT" || draft.endpoint === "/api/v1/products";
+
     try {
-      const transactionPayload = {
-        ...draft.payload,
-        sumberInput: "AI",
-        sumber_input: "AI",
-      };
-      await api.transactions.create(transactionPayload);
+      if (isProductDraft) {
+        await api.products.create(draft.payload);
+      } else {
+        const transactionPayload = {
+          ...draft.payload,
+          sumberInput: "AI",
+          sumber_input: "AI",
+        };
+        await api.transactions.create(transactionPayload);
+      }
 
       setDraftStates((prev) => ({
         ...prev,
         [draftKey]: { status: "saved" },
       }));
-      toast.success("Transaksi berhasil disimpan", {
-        description: `${draft.title} (${draft.total}) telah tercatat dengan sumber AI.`,
-      });
+      toast.success(
+        isProductDraft ? "Produk berhasil ditambahkan" : "Transaksi berhasil disimpan",
+        {
+          description: isProductDraft
+            ? `${draft.title} (${draft.total}) telah masuk ke katalog produk.`
+            : `${draft.title} (${draft.total}) telah tercatat dengan sumber AI.`,
+        }
+      );
     } catch (err) {
       const errorMessage =
         err instanceof Error
           ? err.message
-          : "Gagal menyimpan draf transaksi ke Master Transaksi.";
+          : isProductDraft
+            ? "Gagal menyimpan draf produk ke katalog."
+            : "Gagal menyimpan draf transaksi ke Master Transaksi.";
       setDraftStates((prev) => ({
         ...prev,
         [draftKey]: { status: "error", errorMessage },
       }));
-      toast.error("Gagal menyimpan transaksi", { description: errorMessage });
+      toast.error(
+        isProductDraft ? "Gagal menyimpan produk" : "Gagal menyimpan transaksi",
+        { description: errorMessage }
+      );
     }
   };
 

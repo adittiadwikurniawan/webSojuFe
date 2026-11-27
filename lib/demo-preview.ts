@@ -168,7 +168,7 @@ const SEED: DemoStore = {
 };
 
 export function isDemoPreviewSession(): boolean {
-  return typeof window !== "undefined";
+  return typeof window !== "undefined" && window.localStorage.getItem(DEMO_MODE_KEY) === "1";
 }
 
 export function setDemoPreviewSession(enabled: boolean): void {

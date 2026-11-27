@@ -11,6 +11,14 @@ const statusLabel: Record<string, string> = {
   SELESAI: "Selesai",
   DIBATALKAN: "Dibatalkan",
 };
+const paymentBadge: Record<string, { label: string; bg: string; color: string }> = {
+  SETTLEMENT: { label: "Lunas (Midtrans)", bg: "#DCFCE7", color: "#047857" },
+  PENDING: { label: "Menunggu Pembayaran", bg: "#FEF3C7", color: "#B45309" },
+  UNPAID: { label: "Belum Dibayar", bg: "#FEF3C7", color: "#B45309" },
+  EXPIRE: { label: "Kedaluwarsa", bg: "#FEE2E2", color: "#B91C1C" },
+  CANCEL: { label: "Dibatalkan", bg: "#FEE2E2", color: "#B91C1C" },
+  FAILURE: { label: "Gagal", bg: "#FEE2E2", color: "#B91C1C" },
+};
 const money = (value: unknown) => `Rp ${Number(value || 0).toLocaleString("id-ID")}`;
 
 export default function CustomerOrdersPage() {
@@ -18,6 +26,7 @@ export default function CustomerOrdersPage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [receiptOrderId, setReceiptOrderId] = useState<number | null>(null);
   useEffect(() => {
     customerApi.getOrders().then((result) => setOrders(result.data)).catch((cause) => setError(cause.message)).finally(() => setLoading(false));
   }, []);
@@ -31,18 +40,63 @@ export default function CustomerOrdersPage() {
       <div className="flex items-center justify-between"><h2 className="text-lg font-bold" style={{ color: "#131B2E" }}>Riwayat Pesanan</h2><button type="button" onClick={() => customerApi.getOrders().then((result) => setOrders(result.data)).catch((cause) => setError(cause.message))} className="text-sm font-semibold" style={{ color: "#1E3A8A" }}>Muat ulang</button></div>
       {loading ? <p className="text-sm text-slate-500">Memuat pesanan…</p> : error ? <p role="alert" className="text-sm text-red-700">{error}</p> : orders.length === 0 ? (
         <div className="rounded-3xl border bg-white p-10 text-center" style={{ borderColor: "#E2E7FF" }}><p className="font-semibold" style={{ color: "#131B2E" }}>Belum ada pesanan</p><p className="mt-1 text-sm" style={{ color: "#757682" }}>Pesanan yang dikirim saat checkout akan muncul di sini.</p></div>
-      ) : orders.map((order) => (
-        <article key={order.id} className="rounded-3xl border bg-white p-5 sm:p-6" style={{ borderColor: "#E2E7FF" }}>
-          <div className="flex flex-wrap items-start justify-between gap-3 border-b pb-4" style={{ borderColor: "#EEF0F5" }}>
-            <div><p className="font-bold" style={{ color: "#131B2E" }}>{order.kode}</p><p className="mt-1 text-xs" style={{ color: "#757682" }}>{new Date(order.dibuatPada).toLocaleString("id-ID")}</p></div>
-            <span className="rounded-full bg-[#F2F3FF] px-3 py-1.5 text-xs font-bold" style={{ color: "#1E3A8A" }}>{statusLabel[order.status] || order.status}</span>
-          </div>
-          <div className="divide-y" style={{ borderColor: "#EEF0F5" }}>
-            {(order.item || []).map((item: any) => <div key={item.id} className="flex justify-between gap-3 py-3 text-sm"><span style={{ color: "#444651" }}>{item.namaProduk}{item.varian ? ` · ${item.varian}` : ""} × {item.jumlah}</span><span className="font-semibold" style={{ color: "#131B2E" }}>{money(item.subtotal)}</span></div>)}
-          </div>
-          <div className="flex justify-between border-t pt-3 text-sm" style={{ borderColor: "#EEF0F5" }}><span style={{ color: "#757682" }}>Total</span><strong style={{ color: "#00236F" }}>{money(order.total)}</strong></div>
-        </article>
-      ))}
+      ) : orders.map((order) => {
+        const payKey = String(order.paymentStatus || "UNPAID").toUpperCase();
+        const payInfo = paymentBadge[payKey] || paymentBadge.UNPAID;
+        const canPay = (payKey === "PENDING" || payKey === "UNPAID") && typeof order.snapRedirectUrl === "string" && /^https?:\/\//i.test(order.snapRedirectUrl);
+        const isPaid = payKey === "SETTLEMENT";
+        const showReceipt = receiptOrderId === order.id;
+
+        return (
+          <article key={order.id} className="rounded-3xl border bg-white p-5 sm:p-6" style={{ borderColor: "#E2E7FF" }}>
+            <div className="flex flex-wrap items-start justify-between gap-3 border-b pb-4" style={{ borderColor: "#EEF0F5" }}>
+              <div><p className="font-bold" style={{ color: "#131B2E" }}>{order.kode}</p><p className="mt-1 text-xs" style={{ color: "#757682" }}>{new Date(order.dibuatPada).toLocaleString("id-ID")}</p></div>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="rounded-full px-3 py-1.5 text-xs font-bold" style={{ backgroundColor: payInfo.bg, color: payInfo.color }}>{payInfo.label}</span>
+                <span className="rounded-full bg-[#F2F3FF] px-3 py-1.5 text-xs font-bold" style={{ color: "#1E3A8A" }}>{statusLabel[order.status] || order.status}</span>
+              </div>
+            </div>
+            <div className="divide-y" style={{ borderColor: "#EEF0F5" }}>
+              {(order.item || []).map((item: any) => <div key={item.id} className="flex justify-between gap-3 py-3 text-sm"><span style={{ color: "#444651" }}>{item.namaProduk}{item.varian ? ` · ${item.varian}` : ""} × {item.jumlah}</span><span className="font-semibold" style={{ color: "#131B2E" }}>{money(item.subtotal)}</span></div>)}
+            </div>
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-3 text-sm" style={{ borderColor: "#EEF0F5" }}>
+              <span style={{ color: "#757682" }}>Total</span>
+              <strong style={{ color: "#00236F" }}>{money(order.total)}</strong>
+            </div>
+            {(canPay || isPaid) && (
+              <div className="mt-4 flex flex-wrap items-center gap-2.5 border-t pt-4" style={{ borderColor: "#EEF0F5" }}>
+                {canPay && (
+                  <a
+                    href={order.snapRedirectUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center rounded-full bg-[#1E3A8A] px-4 py-2 text-xs font-bold text-white transition hover:opacity-90"
+                  >
+                    Bayar via Midtrans
+                  </a>
+                )}
+                {isPaid && (
+                  <button
+                    type="button"
+                    onClick={() => setReceiptOrderId(showReceipt ? null : order.id)}
+                    className="inline-flex items-center rounded-full border border-[#059669] px-4 py-2 text-xs font-bold text-[#047857] transition hover:bg-[#ECFDF5]"
+                  >
+                    {showReceipt ? "Tutup Struk Digital" : "Lihat Struk Digital"}
+                  </button>
+                )}
+              </div>
+            )}
+            {showReceipt && (
+              <div className="mt-4 rounded-2xl border border-[#D1FAE5] bg-[#F0FDF4] p-4 text-xs text-[#065F46]">
+                <p className="font-bold">Struk Digital SOJU · {order.kode}</p>
+                <p className="mt-1">Status Pembayaran: <strong>LUNAS</strong>{order.paymentType ? ` (${String(order.paymentType).toUpperCase()})` : ""}</p>
+                {order.paidAt && <p className="mt-0.5">Waktu Bayar: {new Date(order.paidAt).toLocaleString("id-ID")}</p>}
+                <p className="mt-0.5">Total Dibayar: <strong>{money(order.total)}</strong></p>
+              </div>
+            )}
+          </article>
+        );
+      })}
     </div>
   );
 }

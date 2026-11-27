@@ -4,6 +4,14 @@ import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/api";
 
 const labels: Record<string, string> = { MENUNGGU_KONFIRMASI: "Menunggu konfirmasi", DIPROSES: "Diproses", SELESAI: "Selesai", DIBATALKAN: "Dibatalkan" };
+const paymentBadges: Record<string, { label: string; className: string }> = {
+  SETTLEMENT: { label: "Lunas (Midtrans)", className: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+  PENDING: { label: "Menunggu Bayar", className: "bg-amber-50 text-amber-700 border-amber-200" },
+  UNPAID: { label: "Belum Dibayar", className: "bg-amber-50 text-amber-700 border-amber-200" },
+  EXPIRE: { label: "Kedaluwarsa", className: "bg-red-50 text-red-700 border-red-200" },
+  CANCEL: { label: "Batal Bayar", className: "bg-red-50 text-red-700 border-red-200" },
+  FAILURE: { label: "Gagal Bayar", className: "bg-red-50 text-red-700 border-red-200" },
+};
 const money = (value: unknown) => `Rp ${Number(value || 0).toLocaleString("id-ID")}`;
 const statuses = Object.keys(labels);
 
@@ -25,6 +33,9 @@ type CustomerOrder = {
   alamat: string;
   dibuatPada: string;
   status: string;
+  paymentStatus?: string | null;
+  paymentType?: string | null;
+  paidAt?: string | null;
   total: number | string;
   item: OrderItem[];
 };
@@ -62,7 +73,18 @@ export default function CustomerOrdersAdminPage() {
             <article key={order.id} className="rounded-2xl border border-line-soft bg-white p-4 shadow-card sm:p-5">
               <div className="flex flex-col justify-between gap-3 border-b border-line-soft pb-4 sm:flex-row sm:items-start">
                 <div className="min-w-0">
-                  <h2 className="font-bold text-ink">{order.kode}</h2>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="font-bold text-ink">{order.kode}</h2>
+                    {(() => {
+                      const key = String(order.paymentStatus || "UNPAID").toUpperCase();
+                      const badge = paymentBadges[key] || paymentBadges.UNPAID;
+                      return (
+                        <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${badge.className}`}>
+                          {badge.label}{order.paymentType ? ` · ${order.paymentType.toUpperCase()}` : ""}
+                        </span>
+                      );
+                    })()}
+                  </div>
                   <p className="mt-1 break-words text-sm text-slate-500">{order.namaPenerima} · {order.emailPenerima} · {order.noTelepon}</p>
                   <p className="break-words text-sm text-slate-500">{order.alamat}</p>
                   <p className="mt-1 text-xs text-slate-400">{new Date(order.dibuatPada).toLocaleString("id-ID")}</p>

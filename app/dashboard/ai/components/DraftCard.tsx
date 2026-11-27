@@ -22,6 +22,8 @@ export function DraftCard({ draft, execution, onConfirm, onCorrect }: DraftCardP
   const isSaved = status === "saved";
   const isError = status === "error";
   const canConfirm = draft.isReadyToConfirm && !isSaving && !isSaved;
+  const isProductDraft =
+    draft.type === "CREATE_PRODUCT" || draft.endpoint === "/api/v1/products";
 
   return (
     <div className="w-full overflow-hidden rounded-card border border-line-soft bg-white shadow-card">
@@ -35,7 +37,12 @@ export function DraftCard({ draft, execution, onConfirm, onCorrect }: DraftCardP
               {draft.title}
             </span>
             <span className="text-[11.5px] text-faint">
-              Sheet: {draft.sheet} · {isSaved ? "tersimpan ke pembukuan" : "menunggu konfirmasi manual"}
+              Sheet: {draft.sheet} ·{" "}
+              {isSaved
+                ? isProductDraft
+                  ? "tersimpan ke katalog produk"
+                  : "tersimpan ke pembukuan"
+                : "menunggu konfirmasi manual"}
             </span>
           </div>
         </div>
@@ -102,9 +109,19 @@ export function DraftCard({ draft, execution, onConfirm, onCorrect }: DraftCardP
 
       {isSaved && (
         <div className="px-4 pb-4">
-          <StateBanner tone="success" title="Tersimpan ke Master Transaksi (Sumber: AI)">
-            <Link href="/dashboard/data" className="font-bold text-brand hover:underline">
-              Lihat di Data Transaksi →
+          <StateBanner
+            tone="success"
+            title={
+              isProductDraft
+                ? "Tersimpan ke Katalog Produk (Sumber: AI)"
+                : "Tersimpan ke Master Transaksi (Sumber: AI)"
+            }
+          >
+            <Link
+              href={isProductDraft ? "/dashboard/cms" : "/dashboard/data"}
+              className="font-bold text-brand hover:underline"
+            >
+              {isProductDraft ? "Lihat di Katalog Produk →" : "Lihat di Data Transaksi →"}
             </Link>
           </StateBanner>
         </div>
@@ -112,9 +129,14 @@ export function DraftCard({ draft, execution, onConfirm, onCorrect }: DraftCardP
 
       {isError && (
         <div className="px-4 pb-4">
-          <StateBanner title="Transaksi belum tersimpan" code="ERR-A202">
+          <StateBanner
+            title={isProductDraft ? "Produk belum tersimpan" : "Transaksi belum tersimpan"}
+            code="ERR-A202"
+          >
             {execution?.errorMessage ||
-              "Terjadi gangguan saat menyimpan ke sistem pembukuan. Draf masih aman untuk dicoba ulang."}
+              (isProductDraft
+                ? "Terjadi gangguan saat menyimpan produk ke katalog. Draf masih aman untuk dicoba ulang."
+                : "Terjadi gangguan saat menyimpan ke sistem pembukuan. Draf masih aman untuk dicoba ulang.")}
           </StateBanner>
         </div>
       )}

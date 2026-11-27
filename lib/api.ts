@@ -618,13 +618,13 @@ export interface AiActionDraftLineItem {
 
 export interface AiActionDraft {
   id: string;
-  type: 'CREATE_TRANSACTION' | 'CREATE_ORDER';
-  intent: 'PENJUALAN' | 'PEMBELIAN' | 'TRANSAKSI' | 'PESANAN';
+  type: 'CREATE_TRANSACTION' | 'CREATE_ORDER' | 'CREATE_PRODUCT';
+  intent: 'PENJUALAN' | 'PEMBELIAN' | 'TRANSAKSI' | 'PESANAN' | 'PRODUK';
   requiresConfirmation: true;
-  endpoint: '/api/v1/transactions';
+  endpoint: '/api/v1/transactions' | '/api/v1/products';
   method: 'POST';
   title: string;
-  sheet: 'Transaksi' | 'Order';
+  sheet: 'Transaksi' | 'Order' | 'Produk';
   summaryRows: AiActionDraftSummaryRow[];
   total: string;
   totalAmount: number;
