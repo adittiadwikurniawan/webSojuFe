@@ -46,6 +46,49 @@ function routeBadge(routePath: AiRoutePath | null | undefined): { label: string;
   }
 }
 
+function cleanInlineCitations(raw: string): string {
+  return raw
+    .replace(/\s*\(\s*\[*(?:SQL-\d+|D\d+)\]*\s*\)/gi, "")
+    .replace(/\s*\[+(?:SQL-\d+|D\d+)\]+/gi, "")
+    .trim();
+}
+
+function renderBoldParts(line: string) {
+  const parts = line.split(/(\*\*[^*]+\*\*)/g);
+  return parts.map((part, idx) => {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      return (
+        <strong key={idx} className="font-bold text-ink">
+          {part.slice(2, -2)}
+        </strong>
+      );
+    }
+    return <span key={idx}>{part}</span>;
+  });
+}
+
+function FormattedAiText({ content }: { content: string }) {
+  const lines = cleanInlineCitations(content).split("\n");
+  return (
+    <div className="space-y-1.5 text-[14px] leading-relaxed">
+      {lines.map((line, i) => {
+        const trimmed = line.trim();
+        if (!trimmed) return <div key={i} className="h-1" />;
+        const bulletMatch = trimmed.match(/^[\*\-•]\s+(.*)$/);
+        if (bulletMatch) {
+          return (
+            <div key={i} className="flex items-start gap-2">
+              <span className="mt-2 size-1.5 shrink-0 rounded-full bg-navy" />
+              <div className="min-w-0 flex-1">{renderBoldParts(bulletMatch[1])}</div>
+            </div>
+          );
+        }
+        return <p key={i}>{renderBoldParts(trimmed)}</p>;
+      })}
+    </div>
+  );
+}
+
 export function ChatMessageItem({
   message: m,
   userInitials,
@@ -98,7 +141,11 @@ export function ChatMessageItem({
                 : "rounded-tl-md bg-white text-ink shadow-card")
             }
           >
-            <div className="whitespace-pre-wrap text-[14px] leading-relaxed">{m.content}</div>
+            {isUser ? (
+              <div className="whitespace-pre-wrap text-[14px] leading-relaxed">{m.content}</div>
+            ) : (
+              <FormattedAiText content={m.content} />
+            )}
           </div>
         )}
 

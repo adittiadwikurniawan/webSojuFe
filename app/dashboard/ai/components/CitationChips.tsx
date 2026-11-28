@@ -9,9 +9,8 @@ function isSqlCitation(citation: AiCitation): citation is AiSqlCitation {
 }
 
 function formatCitationTag(id: string): string {
-  const trimmed = id.trim();
-  if (trimmed.startsWith("[") && trimmed.endsWith("]")) return trimmed;
-  return `[${trimmed}]`;
+  const cleaned = id.replace(/[\[\]]/g, "").trim();
+  return cleaned || "DATA";
 }
 
 function sourceTypeLabel(sourceType: AiDocumentCitation["sourceType"]): string {
